@@ -59,9 +59,10 @@ class WeightAddView(WgerFormMixin, CreateView):
     """
     Generic view to add a new weight entry
     """
+
     model = WeightEntry
     form_class = WeightForm
-    title = gettext_lazy('Add weight entry')
+    title = gettext_lazy("Add weight entry")
 
     def get_initial(self):
         """
@@ -70,7 +71,7 @@ class WeightAddView(WgerFormMixin, CreateView):
         Read the comment on weight/models.py WeightEntry about why we need
         to pass the user here.
         """
-        return {'user': self.request.user, 'date': datetime.date.today()}
+        return {"user": self.request.user, "date": datetime.date.today()}
 
     def form_valid(self, form):
         """
@@ -83,19 +84,20 @@ class WeightAddView(WgerFormMixin, CreateView):
         """
         Return to overview with username
         """
-        return reverse('weight:overview')
+        return reverse("weight:overview")
 
 
 class WeightUpdateView(WgerFormMixin, LoginRequiredMixin, UpdateView):
     """
     Generic view to edit an existing weight entry
     """
+
     model = WeightEntry
     form_class = WeightForm
 
     def get_context_data(self, **kwargs):
         context = super(WeightUpdateView, self).get_context_data(**kwargs)
-        context['title'] = _('Edit weight entry for the %s') % self.object.date
+        context["title"] = _("Edit weight entry for the %s") % self.object.date
 
         return context
 
@@ -103,7 +105,7 @@ class WeightUpdateView(WgerFormMixin, LoginRequiredMixin, UpdateView):
         """
         Return to overview with username
         """
-        return reverse('weight:overview')
+        return reverse("weight:overview")
 
 
 class WeightDeleteView(WgerDeleteMixin, LoginRequiredMixin, DeleteView):
@@ -112,18 +114,18 @@ class WeightDeleteView(WgerDeleteMixin, LoginRequiredMixin, DeleteView):
     """
 
     model = WeightEntry
-    messages = gettext_lazy('Successfully deleted.')
+    messages = gettext_lazy("Successfully deleted.")
 
     def get_context_data(self, **kwargs):
         context = super(WeightDeleteView, self).get_context_data(**kwargs)
-        context['title'] = _('Delete weight entry for the %s') % self.object.date
+        context["title"] = _("Delete weight entry for the %s") % self.object.date
         return context
 
     def get_success_url(self):
         """
         Return to overview with username
         """
-        return reverse('weight:overview')
+        return reverse("weight:overview")
 
 
 @login_required
@@ -133,20 +135,20 @@ def export_csv(request):
     """
 
     # Prepare the response headers
-    response = HttpResponse(content_type='text/csv')
+    response = HttpResponse(content_type="text/csv")
 
     # Convert all weight data to CSV
     writer = csv.writer(response)
 
     weights = WeightEntry.objects.filter(user=request.user)
-    writer.writerow([_('Date'), _('Weight')])
+    writer.writerow([_("Date"), _("Weight")])
 
     for entry in weights:
         writer.writerow([entry.date, entry.weight])
 
     # Send the data to the browser
-    response['Content-Disposition'] = 'attachment; filename=Weightdata.csv'
-    response['Content-Length'] = len(response.content)
+    response["Content-Disposition"] = "attachment; filename=Weightdata.csv"
+    response["Content-Length"] = len(response.content)
     return response
 
 
@@ -155,18 +157,19 @@ def overview(request, username=None):
     """
     Shows a plot with the weight data
     """
+    # TODO MAR: Extend this function so that it shows a moving average of the weights
     is_owner, user = check_access(request.user, username)
     context = {
-        'is_owner': is_owner,
-        'owner_user': user,
-        'show_shariff': False,
+        "is_owner": is_owner,
+        "owner_user": user,
+        "show_shariff": False,
     }
-    return render(request, 'overview.html', context)
+    return render(request, "overview.html", context)
 
 
 class WeightCsvImportFormPreview(FormPreview):
-    preview_template = 'import_csv_preview.html'
-    form_template = 'import_csv_form.html'
+    preview_template = "import_csv_preview.html"
+    form_template = "import_csv_form.html"
 
     def get_context(self, request, form):
         """
@@ -174,13 +177,13 @@ class WeightCsvImportFormPreview(FormPreview):
         """
 
         return {
-            'form': form,
-            'stage_field': self.unused_name('stage'),
-            'state': self.state,
+            "form": form,
+            "stage_field": self.unused_name("stage"),
+            "state": self.state,
         }
 
     def process_preview(self, request, form, context):
-        context['weight_list'], context['error_list'] = helpers.parse_weight_csv(
+        context["weight_list"], context["error_list"] = helpers.parse_weight_csv(
             request, form.cleaned_data
         )
         return context
@@ -188,4 +191,4 @@ class WeightCsvImportFormPreview(FormPreview):
     def done(self, request, cleaned_data):
         weight_list, error_list = helpers.parse_weight_csv(request, cleaned_data)
         WeightEntry.objects.bulk_create(weight_list)
-        return HttpResponseRedirect(reverse('weight:overview'))
+        return HttpResponseRedirect(reverse("weight:overview"))
